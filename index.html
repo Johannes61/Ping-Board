@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PingBoard</title>
-  <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="stylesheet" href="./css/styles.css?v=4" />
 </head>
 <body>
   <header class="app-header">
@@ -75,17 +75,17 @@
       </div>
     </section>
 
-    <!-- PROFILE CARD AT BOTTOM -->
+    <!-- PROFILE CARD -->
     <section id="profile" class="profile-section">
       <div class="profile-banner"></div>
-      <div id="ghCard" class="profile-card"><!-- filled by app.js --></div>
+      <div id="ghCard" class="profile-card"></div>
     </section>
   </main>
 
-  <!-- Scripts: load ONCE, in this order -->
-  <script src="./js/storage.js"></script>
-  <script src="./js/pinger.js"></script>
-  <script src="./js/dragdrop.js"></script>
-  <script src="./js/app.js"></script>
+  <!-- IMPORTANT: defer + version query to avoid duplicates & caches. Keep this order. -->
+  <script src="./js/storage.js?v=4" defer></script>
+  <script src="./js/pinger.js?v=4" defer></script>
+  <script src="./js/dragdrop.js?v=4" defer></script>
+  <script src="./js/app.js?v=4" defer></script>
 </body>
 </html>

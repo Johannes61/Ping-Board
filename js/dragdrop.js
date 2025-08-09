@@ -1,4 +1,3 @@
-// dragdrop.js - namespaced DnD helpers
 (function () {
   let draggingId = null;
 

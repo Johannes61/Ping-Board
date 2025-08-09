@@ -1,6 +1,5 @@
-// storage.js - namespaced
 (function () {
-  const STORE_KEY = 'pingboard:v2';
+  const STORE_KEY = 'pingboard:v3';
   const Storage = {
     load() {
       try {

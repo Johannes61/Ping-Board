@@ -1,5 +1,8 @@
-// app.js - wraps in IIFE to avoid globals
 (function () {
+  if (window.PingBoard?.__booted) return;    // singleton guard
+  window.PingBoard = window.PingBoard || {};
+  window.PingBoard.__booted = true;
+
   const { Storage, Pinger, DragDrop } = window.PingBoard;
 
   const state = Storage.load();
@@ -29,7 +32,7 @@
       restartAllTimers();
     });
 
-    // Notifications
+    // Notifications toggle
     const notifBtn = $('#notifBtn');
     updateNotifBtn();
     notifBtn.addEventListener('click', async () => {
@@ -45,8 +48,7 @@
       if (!confirm('Wipe all data?')) return;
       Storage.wipe();
       Object.assign(state, { intervalMs: 10000, sites: [], activeIds: [], notifications: false });
-      Object.values(runtime).forEach(r => r.timer && clearInterval(r.timer));
-      for (const k in runtime) delete runtime[k];
+      stopAllTimers(); for (const k in runtime) delete runtime[k];
       renderLists(); renderCards();
     });
 
@@ -78,25 +80,28 @@
       let url  = $('#siteUrl').value.trim();
       if (!name || !url) return;
 
-      url = Pinger.ensureProtocol(url); // normalize
-
+      url = Pinger.ensureProtocol(url); // normalize absolute
       const id = uid();
       state.sites.push({ id, name, url, intervalMs: DEFAULT_SITE_INT });
       Storage.save(state);
       $('#siteName').value = ''; $('#siteUrl').value = '';
+
+      // Re-render lists so it shows under "Available" and is draggable
       renderLists();
+      // Optional: auto-open Settings tab so user can drag right away
+      // document.querySelector('[data-tab="settings"]').click();
     });
 
-    // DnD targets
+    // DnD drop zones
     DragDrop.makeDroppable($('#availableList'), onDropList);
     DragDrop.makeDroppable($('#activeList'), onDropList);
 
-    // Initial UI + timers
+    // First render + timers
     renderLists();
     renderCards();
     restartAllTimers();
 
-    // Load GitHub profile card
+    // GitHub card
     loadGitHubProfile('Johannes61');
   }
 
@@ -127,9 +132,7 @@
           <div>${site.name}</div>
           <div class="url">${site.url}</div>
         </div>
-        <div>
-          <button class="remove">Remove</button>
-        </div>
+        <div><button class="remove">Remove</button></div>
       `;
       DragDrop.makeDraggable(li);
       li.querySelector('.remove').addEventListener('click', () => {
@@ -167,20 +170,16 @@
           <div class="name">${site.name}</div>
           <div class="badge ${statusClass}">${r.status}</div>
         </div>
-
         <div class="row meta">
           <span title="Ping target origin">${origin}</span>
           <a class="tiny" href="${url}" target="_blank" rel="noreferrer">verify target ↗</a>
         </div>
-
         <div class="row stats">
           <span>Latency: <strong>${r.ms ?? '—'}</strong> ms</span>
           <span>Uptime: <strong>${uptime}</strong>%</span>
           <span>Last: <strong>${lastChecked}</strong></span>
         </div>
-
         <div class="spark"><canvas></canvas></div>
-
         <div class="actions">
           <button class="ghost" data-act="open">Open</button>
           <button class="ghost" data-act="edit">Edit</button>
@@ -190,7 +189,7 @@
         </div>
       `;
 
-      // Wire buttons
+      // Wire actions
       card.querySelector('[data-act="open"]').addEventListener('click', () => {
         window.open(site.url, '_blank', 'noopener,noreferrer');
       });
@@ -251,29 +250,30 @@
     ctx.strokeStyle = '#6ea8fe'; ctx.stroke();
   }
 
-  /* ---------------- Timers (per-site) ---------------- */
+  // Timers
   function startTimerFor(id) {
     const site = state.sites.find(s => s.id === id);
     const r = runtime[id] || (runtime[id] = {});
     if (r.timer) clearInterval(r.timer);
     if (!state.activeIds.includes(id) || r.paused) return;
     const int = (site?.intervalMs && site.intervalMs > 0) ? site.intervalMs : state.intervalMs;
-    singleTick(id);
+    singleTick(id); // immediate ping on activate
     r.timer = setInterval(() => singleTick(id), int);
   }
-  function restartTimerFor(id) { const r = runtime[id]; if (r?.timer) { clearInterval(r.timer); r.timer = null; } startTimerFor(id); }
-  function restartAllTimers() { stopAllTimers(); for (const id of state.activeIds) startTimerFor(id); }
-  function stopAllTimers() { for (const id in runtime) { const r = runtime[id]; if (r?.timer) { clearInterval(r.timer); r.timer = null; } } }
+  function restartTimerFor(id){ const r=runtime[id]; if (r?.timer){ clearInterval(r.timer); r.timer=null; } startTimerFor(id); }
+  function restartAllTimers(){ stopAllTimers(); for (const id of state.activeIds) startTimerFor(id); }
+  function stopAllTimers(){ for (const id in runtime){ const r=runtime[id]; if (r?.timer){ clearInterval(r.timer); r.timer=null; } } }
 
-  /* -------------- Ping + notifications -------------- */
+  // Ping
   async function singleTick(id) {
     const site = state.sites.find(s => s.id === id); if (!site) return;
     const r = runtime[id] || (runtime[id] = { history: [], up: 0, total: 0, status: '—' });
     const prevStatus = r.status;
 
-    const res = await window.PingBoard.Pinger.pingOnce(site.url);
+    const res = await Pinger.pingOnce(site.url);
     r.total++; r.last = Date.now();
-    if (res.ok) { r.up++; r.status = 'UP'; r.ms = res.ms; } else { r.status = 'DOWN'; r.ms = null; }
+    if (res.ok) { r.up++; r.status = 'UP'; r.ms = res.ms; }
+    else { r.status = 'DOWN'; r.ms = null; }
     r.history.push(res.ok ? res.ms : null);
     if (r.history.length > 40) r.history.shift();
 
@@ -296,16 +296,13 @@
     }
   }
 
-  /* ---------- GitHub profile card ---------- */
+  // GitHub card
   async function loadGitHubProfile(username) {
     const el = document.getElementById('ghCard');
     try {
-      const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-        headers: { 'Accept': 'application/vnd.github+json' }
-      });
+      const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, { headers:{'Accept':'application/vnd.github+json'} });
       if (!res.ok) throw new Error(`GitHub API ${res.status}`);
       const u = await res.json();
-
       const name = u.name || u.login;
       const bio = u.bio || '';
       const avatar = u.avatar_url;
@@ -314,7 +311,6 @@
       const repos = u.public_repos ?? 0;
       const loc = u.location || '';
       const blog = u.blog ? (u.blog.startsWith('http') ? u.blog : `https://${u.blog}`) : '';
-
       el.innerHTML = `
         <img src="${avatar}" alt="${name} avatar" />
         <div class="profile-info">
@@ -337,7 +333,7 @@
       el.innerHTML = `
         <div class="profile-info">
           <div class="profile-name">@${username}</div>
-          <div class="profile-badges" style="color:var(--muted)">Could not load GitHub profile (${String(e).replace('Error:','').trim()}).</div>
+          <div class="profile-badges" style="color:var(--muted)">Could not load GitHub profile.</div>
         </div>
         <div class="profile-actions">
           <a href="https://github.com/${username}" target="_blank" rel="noreferrer">Open on GitHub</a>
