@@ -4,15 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PingBoard</title>
-  <link rel="stylesheet" href="./css/styles.css?v=4" />
+  <link rel="stylesheet" href="./css/styles.css?v=5" />
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
       <h1>PingBoard</h1>
-      <nav class="tabs">
-        <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-        <button class="tab-btn" data-tab="settings">Settings</button>
+      <nav class="tabs" role="tablist" aria-label="Sections">
+        <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="dashboard" id="tab-dashboard" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="settings" id="tab-settings" data-tab="settings">Settings</button>
       </nav>
     </div>
     <div class="header-right">
@@ -22,7 +22,7 @@
 
   <main>
     <!-- DASHBOARD -->
-    <section id="dashboard" class="tab active">
+    <section id="dashboard" class="tab" role="tabpanel" aria-labelledby="tab-dashboard">
       <div class="toolbar">
         <label>Global interval:
           <select id="intervalSelect">
@@ -50,7 +50,7 @@
     </section>
 
     <!-- SETTINGS -->
-    <section id="settings" class="tab">
+    <section id="settings" class="tab" role="tabpanel" aria-labelledby="tab-settings" hidden>
       <form id="addSiteForm" class="add-form" autocomplete="off">
         <div>
           <label>Name</label>
@@ -82,10 +82,10 @@
     </section>
   </main>
 
-  <!-- IMPORTANT: defer + version query to avoid duplicates & caches. Keep this order. -->
-  <script src="./js/storage.js?v=4" defer></script>
-  <script src="./js/pinger.js?v=4" defer></script>
-  <script src="./js/dragdrop.js?v=4" defer></script>
-  <script src="./js/app.js?v=4" defer></script>
+  <!-- Scripts: load once, in order; cache-bust with ?v=5 -->
+  <script src="./js/storage.js?v=5" defer></script>
+  <script src="./js/pinger.js?v=5" defer></script>
+  <script src="./js/dragdrop.js?v=5" defer></script>
+  <script src="./js/app.js?v=5" defer></script>
 </body>
 </html>

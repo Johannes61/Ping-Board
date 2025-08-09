@@ -1,27 +1,22 @@
 (function () {
-  if (window.PingBoard?.__booted) return;    // singleton guard
+  if (window.PingBoard?.__booted) return; // singleton guard
   window.PingBoard = window.PingBoard || {};
   window.PingBoard.__booted = true;
 
   const { Storage, Pinger, DragDrop } = window.PingBoard;
 
   const state = Storage.load();
-  const runtime = {};         // id -> { history, up, total, status, ms, last, paused, timer }
-  const DEFAULT_SITE_INT = 0; // 0 = follow global
+  const runtime = {}; // id -> { history, up, total, status, ms, last, paused, timer }
 
   const $ = (q) => document.querySelector(q);
   const $$ = (q) => Array.from(document.querySelectorAll(q));
   const uid = () => Math.random().toString(36).slice(2, 10);
 
   function init() {
-    // Tabs
-    $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-      $$('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      $$('.tab').forEach(s => s.classList.remove('active'));
-      $('#' + tab).classList.add('active');
-    }));
+    // Tabs (ARIA)
+    $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    // start on dashboard
+    switchTab('dashboard');
 
     // Global interval
     const intervalSelect = $('#intervalSelect');
@@ -32,7 +27,7 @@
       restartAllTimers();
     });
 
-    // Notifications toggle
+    // Notifications
     const notifBtn = $('#notifBtn');
     updateNotifBtn();
     notifBtn.addEventListener('click', async () => {
@@ -49,7 +44,7 @@
       Storage.wipe();
       Object.assign(state, { intervalMs: 10000, sites: [], activeIds: [], notifications: false });
       stopAllTimers(); for (const k in runtime) delete runtime[k];
-      renderLists(); renderCards();
+      renderLists(); renderCards(); redrawAllSparklines();
     });
 
     $('#exportBtn').addEventListener('click', () => {
@@ -63,7 +58,7 @@
       try {
         await Storage.import(file);
         Object.assign(state, Storage.load());
-        stopAllTimers(); renderLists(); renderCards(); restartAllTimers();
+        stopAllTimers(); renderLists(); renderCards(); restartAllTimers(); redrawAllSparklines();
         alert('Imported.');
       } catch (err) { alert('Import failed: ' + err); }
       e.target.value = '';
@@ -80,19 +75,18 @@
       let url  = $('#siteUrl').value.trim();
       if (!name || !url) return;
 
-      url = Pinger.ensureProtocol(url); // normalize absolute
+      url = Pinger.ensureProtocol(url);
       const id = uid();
-      state.sites.push({ id, name, url, intervalMs: DEFAULT_SITE_INT });
+      state.sites.push({ id, name, url, intervalMs: 0 });
       Storage.save(state);
       $('#siteName').value = ''; $('#siteUrl').value = '';
 
-      // Re-render lists so it shows under "Available" and is draggable
       renderLists();
-      // Optional: auto-open Settings tab so user can drag right away
-      // document.querySelector('[data-tab="settings"]').click();
+      // Optional: jump to settings so user sees the new item to drag
+      // switchTab('settings');
     });
 
-    // DnD drop zones
+    // Drag & drop zones
     DragDrop.makeDroppable($('#availableList'), onDropList);
     DragDrop.makeDroppable($('#activeList'), onDropList);
 
@@ -103,19 +97,40 @@
 
     // GitHub card
     loadGitHubProfile('Johannes61');
+
+    // Resize handling (sparkline responsive)
+    setupResponsiveSparklines();
   }
 
+  /* ---------- Tabs ---------- */
+  function switchTab(tabId) {
+    const dashboard = $('#dashboard');
+    const settings  = $('#settings');
+
+    const isDash = tabId === 'dashboard';
+    dashboard.hidden = !isDash;
+    settings.hidden  = isDash;
+
+    $$('.tab-btn').forEach(btn => {
+      const active = btn.dataset.tab === tabId;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+
+  /* ---------- Header actions ---------- */
   function updateNotifBtn() {
     $('#notifBtn').textContent = state.notifications ? 'Notifications: ON' : 'Enable notifications';
   }
 
+  /* ---------- DnD ---------- */
   function onDropList(id, target) {
     if (!state.sites.some(s => s.id === id)) return;
     const isActive = state.activeIds.includes(id);
     if (target === 'active' && !isActive) state.activeIds.push(id);
     if (target === 'available' && isActive) state.activeIds = state.activeIds.filter(x => x !== id);
     Storage.save(state);
-    renderLists(); renderCards(); restartAllTimers();
+    renderLists(); renderCards(); restartAllTimers(); redrawAllSparklines();
   }
 
   function renderLists() {
@@ -141,13 +156,14 @@
         const r = runtime[site.id]; if (r?.timer) clearInterval(r.timer);
         delete runtime[site.id];
         Storage.save(state);
-        renderLists(); renderCards();
+        renderLists(); renderCards(); redrawAllSparklines();
       });
 
       activeSet.has(site.id) ? active.appendChild(li) : available.appendChild(li);
     }
   }
 
+  /* ---------- Cards ---------- */
   function renderCards() {
     const cards = $('#cards');
     cards.innerHTML = '';
@@ -157,7 +173,7 @@
       const site = state.sites.find(s => s.id === id); if (!site) continue;
       const r = runtime[id] || (runtime[id] = { history: [], up: 0, total: 0, status: '—', ms: null, last: null, paused: false });
 
-      const { origin, url } = Pinger.describeTarget(site.url);
+      const { origin, url } = window.PingBoard.Pinger.describeTarget(site.url);
       const statusClass = r.status === 'UP' ? 'up' : (r.status === 'DOWN' ? 'down' : '');
       const uptime = r.total ? Math.round((r.up / r.total) * 100) : 100;
       const lastChecked = r.last ? new Date(r.last).toLocaleTimeString() : '—';
@@ -202,12 +218,13 @@
         const parsed = Number(newInt);
         site.intervalMs = Number.isFinite(parsed) && parsed >= 0 ? parsed : site.intervalMs || 0;
         Storage.save(state);
-        renderLists(); renderCards(); restartTimerFor(id);
+        renderLists(); renderCards(); restartTimerFor(id); redrawAllSparklines();
       });
       card.querySelector('[data-act="retest"]').addEventListener('click', async () => {
         await singleTick(id);
       });
       card.querySelector('[data-act="pause"]').addEventListener('click', () => {
+        const r = runtime[id];
         r.paused = !r.paused;
         if (r.paused && r.timer) { clearInterval(r.timer); r.timer = null; }
         else if (!r.paused) { startTimerFor(id); }
@@ -218,11 +235,14 @@
         Storage.save(state);
         const rt = runtime[id]; if (rt?.timer) clearInterval(rt.timer);
         delete runtime[id];
-        renderLists(); renderCards();
+        renderLists(); renderCards(); redrawAllSparklines();
       });
 
-      drawSparkline(card.querySelector('canvas'), r.history);
+      // Sparkline initial draw
+      const canvas = card.querySelector('canvas');
+      drawSparkline(canvas, r.history);
 
+      // Interval hint
       const hint = document.createElement('div');
       hint.className = 'meta';
       hint.style.marginTop = '6px';
@@ -233,47 +253,79 @@
     }
   }
 
+  /* ---------- Sparkline drawing (HiDPI + responsive) ---------- */
   function drawSparkline(canvas, history) {
     const ctx = canvas.getContext('2d');
-    const w = canvas.width = canvas.clientWidth;
-    const h = canvas.height = canvas.clientHeight;
-    ctx.clearRect(0,0,w,h);
+    const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+    const cssW = canvas.clientWidth || 300;
+    const cssH = canvas.clientHeight || 48;
+
+    canvas.width = cssW * dpr;
+    canvas.height = cssH * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale once
+
+    ctx.clearRect(0, 0, cssW, cssH);
     if (!history.length) return;
+
     const max = Math.max(...history.map(v => (v ?? 0))) || 1;
     const min = 0;
-    ctx.lineWidth = 2; ctx.beginPath();
+
+    ctx.lineWidth = 2;
+    ctx.beginPath();
     history.forEach((val, i) => {
-      const x = (i / Math.max(1, history.length - 1)) * (w - 6) + 3;
-      const y = val == null ? h - 3 : h - 3 - ((val - min) / (max - min)) * (h - 6);
+      const x = (i / Math.max(1, history.length - 1)) * (cssW - 6) + 3;
+      const y = val == null ? cssH - 3 : cssH - 3 - ((val - min) / (max - min)) * (cssH - 6);
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = '#6ea8fe'; ctx.stroke();
+    ctx.strokeStyle = '#6ea8fe';
+    ctx.stroke();
   }
 
-  // Timers
+  function redrawAllSparklines() {
+    for (const id of state.activeIds) {
+      const card = document.querySelector(`.card[data-id="${id}"]`);
+      if (!card) continue;
+      const canvas = card.querySelector('canvas');
+      const r = runtime[id]; if (canvas && r) drawSparkline(canvas, r.history);
+    }
+  }
+
+  function setupResponsiveSparklines() {
+    // Redraw on window resize
+    window.addEventListener('resize', () => {
+      // debounce a touch
+      clearTimeout(setupResponsiveSparklines._t);
+      setupResponsiveSparklines._t = setTimeout(redrawAllSparklines, 100);
+    });
+
+    // Redraw when the cards grid layout changes size
+    const ro = new ResizeObserver(() => redrawAllSparklines());
+    ro.observe(document.getElementById('cards'));
+  }
+
+  /* ---------- Timers ---------- */
   function startTimerFor(id) {
     const site = state.sites.find(s => s.id === id);
     const r = runtime[id] || (runtime[id] = {});
     if (r.timer) clearInterval(r.timer);
     if (!state.activeIds.includes(id) || r.paused) return;
     const int = (site?.intervalMs && site.intervalMs > 0) ? site.intervalMs : state.intervalMs;
-    singleTick(id); // immediate ping on activate
+    singleTick(id); // immediate
     r.timer = setInterval(() => singleTick(id), int);
   }
   function restartTimerFor(id){ const r=runtime[id]; if (r?.timer){ clearInterval(r.timer); r.timer=null; } startTimerFor(id); }
   function restartAllTimers(){ stopAllTimers(); for (const id of state.activeIds) startTimerFor(id); }
   function stopAllTimers(){ for (const id in runtime){ const r=runtime[id]; if (r?.timer){ clearInterval(r.timer); r.timer=null; } } }
 
-  // Ping
+  /* ---------- Ping + notifications ---------- */
   async function singleTick(id) {
     const site = state.sites.find(s => s.id === id); if (!site) return;
     const r = runtime[id] || (runtime[id] = { history: [], up: 0, total: 0, status: '—' });
     const prevStatus = r.status;
 
-    const res = await Pinger.pingOnce(site.url);
+    const res = await window.PingBoard.Pinger.pingOnce(site.url);
     r.total++; r.last = Date.now();
-    if (res.ok) { r.up++; r.status = 'UP'; r.ms = res.ms; }
-    else { r.status = 'DOWN'; r.ms = null; }
+    if (res.ok) { r.up++; r.status = 'UP'; r.ms = res.ms; } else { r.status = 'DOWN'; r.ms = null; }
     r.history.push(res.ok ? res.ms : null);
     if (r.history.length > 40) r.history.shift();
 
@@ -296,13 +348,16 @@
     }
   }
 
-  // GitHub card
+  /* ---------- GitHub profile card ---------- */
   async function loadGitHubProfile(username) {
     const el = document.getElementById('ghCard');
     try {
-      const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, { headers:{'Accept':'application/vnd.github+json'} });
+      const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
+        headers: { 'Accept': 'application/vnd.github+json' }
+      });
       if (!res.ok) throw new Error(`GitHub API ${res.status}`);
       const u = await res.json();
+
       const name = u.name || u.login;
       const bio = u.bio || '';
       const avatar = u.avatar_url;
@@ -311,6 +366,7 @@
       const repos = u.public_repos ?? 0;
       const loc = u.location || '';
       const blog = u.blog ? (u.blog.startsWith('http') ? u.blog : `https://${u.blog}`) : '';
+
       el.innerHTML = `
         <img src="${avatar}" alt="${name} avatar" />
         <div class="profile-info">
@@ -329,7 +385,7 @@
           <a href="${u.html_url}?tab=repositories" target="_blank" rel="noreferrer">Repositories</a>
         </div>
       `;
-    } catch (e) {
+    } catch {
       el.innerHTML = `
         <div class="profile-info">
           <div class="profile-name">@${username}</div>

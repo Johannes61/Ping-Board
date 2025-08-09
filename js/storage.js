@@ -1,5 +1,5 @@
 (function () {
-  const STORE_KEY = 'pingboard:v3';
+  const STORE_KEY = 'pingboard:v5';
   const Storage = {
     load() {
       try {

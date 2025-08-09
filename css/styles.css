@@ -13,7 +13,7 @@ body{
 }
 main{padding:16px; max-width:1080px; margin:0 auto; width:100%; flex:1}
 
-/* Header (same height left/right) */
+/* Header with right credit */
 .app-header{
   position:sticky; top:0; z-index:5;
   display:flex; align-items:center; justify-content:space-between;
@@ -29,6 +29,9 @@ main{padding:16px; max-width:1080px; margin:0 auto; width:100%; flex:1}
 .header-right a{color:var(--text); text-decoration:none}
 .header-right a:hover{text-decoration:underline}
 
+/* Tabs & visibility */
+.tab[hidden]{display:none !important}
+
 /* Toolbar */
 .toolbar{display:flex; align-items:center; gap:10px; margin-bottom:12px}
 .toolbar .spacer{flex:1}
@@ -43,16 +46,23 @@ select,input{background:var(--card); border:1px solid var(--border); color:var(-
 .import-label input{display:none}
 
 /* Cards */
-.cards-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px}
+.cards-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px
+}
 .cards-grid.empty{display:block}
-.empty-state{padding:16px; border:1px dashed var(--border); border-radius:10px; color:var(--muted); background:var(--panel)}
+.empty-state{
+  padding:16px; border:1px dashed var(--border); border-radius:10px; color:var(--muted);
+  background:var(--panel)
+}
 .card{
-  background:linear-gradient(180deg,#171e32,#151b2d); border:1px solid var(--border); border-radius:14px; padding:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.12); transition:transform .15s ease, box-shadow .15s ease;
+  background:linear-gradient(180deg,#171e32,#151b2d);
+  border:1px solid var(--border); border-radius:14px; padding:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
+  transition:transform .15s ease, box-shadow .15s ease;
 }
 .card:hover{transform:translateY(-1px); box-shadow:0 14px 34px rgba(0,0,0,.18)}
 .card .row{display:flex; align-items:center; justify-content:space-between; gap:8px}
-.card .name{font-weight:650}
+.card .name{font-weight:650; word-break:break-word}
 .card .meta{color:var(--muted); font-size:12px}
 .card .tiny{color:var(--muted); font-size:12px; text-decoration:none}
 .card .tiny:hover{color:var(--text); text-decoration:underline}
@@ -61,7 +71,10 @@ select,input{background:var(--card); border:1px solid var(--border); color:var(-
 .badge.down{background:var(--bad-bg); border-color:var(--bad-bd); color:var(--bad-tx)}
 .stats{display:flex; gap:10px; color:var(--muted)}
 .stats strong{color:var(--text)}
-.spark{height:44px; width:100%; background:#0f1422; border:1px solid var(--border); border-radius:8px; overflow:hidden}
+.spark{
+  height:48px; width:100%;
+  background:#0f1422; border:1px solid var(--border); border-radius:8px; overflow:hidden
+}
 .spark canvas{width:100%; height:100%}
 .actions{display:flex; gap:8px}
 
@@ -75,7 +88,7 @@ select,input{background:var(--card); border:1px solid var(--border); color:var(-
 .site-list{list-style:none; padding:0; margin:0; min-height:220px; border:1px dashed var(--border); border-radius:8px}
 .site-item{display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--border); cursor:grab; user-select:none}
 .site-item:last-child{border-bottom:none}
-.site-item .url{color:var(--muted); font-size:12px}
+.site-item .url{color:var(--muted); font-size:12px; word-break:break-all}
 .site-item.dragging{opacity:.5}
 .site-list.drag-over{outline:2px dashed var(--accent); outline-offset:3px}
 
