@@ -1,44 +1,31 @@
 :root{
-  --bg:#0e1016;
-  --panel:#121725;
-  --card:#161c2e;
-  --text:#e9eef7;
-  --muted:#9aa4b2;
-  --accent:#6ea8fe;
-  --border:#262c3a;
+  --bg:#0e1016; --panel:#121725; --card:#161c2e; --text:#e9eef7; --muted:#9aa4b2;
+  --accent:#6ea8fe; --border:#262c3a;
   --ok-bg:#14231a; --ok-bd:#2a3c32; --ok-tx:#c9f3d8;
   --bad-bg:#2a1718; --bad-bd:#7a2a2b; --bad-tx:#ffd3d3;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-
-/* Sticky footer layout */
 body{
-  margin:0; background:linear-gradient(180deg,#0d111a,#0e1016);
-  color:var(--text);
+  margin:0; background:linear-gradient(180deg,#0d111a,#0e1016); color:var(--text);
   font:14px/1.5 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  display:flex; flex-direction:column; min-height:100vh;
+  min-height:100vh; display:flex; flex-direction:column;
 }
-main{
-  padding:16px; max-width:1080px; margin:0 auto; width:100%;
-  flex:1 0 auto; /* pushes footer down when content is short */
-}
-.app-footer{
-  flex-shrink:0; color:var(--muted); border-top:1px solid var(--border);
-  padding:12px 16px; text-align:center; background:var(--panel)
-}
+main{padding:16px; max-width:1080px; margin:0 auto; width:100%; flex:1}
 
 /* Header */
 .app-header{
-  position:sticky; top:0; z-index:5;
-  display:flex; align-items:center; gap:14px;
-  padding:12px 16px; background:var(--panel);
-  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between;
+  gap:14px; padding:12px 16px; background:var(--panel); border-bottom:1px solid var(--border);
 }
+.brand{display:flex; align-items:center; gap:14px}
 .app-header h1{margin:0; font-size:18px; letter-spacing:.2px}
 .tabs{display:flex; gap:8px}
 .tab-btn{border:1px solid var(--border); background:transparent; color:var(--muted); padding:6px 10px; border-radius:8px; cursor:pointer}
 .tab-btn.active{color:var(--text); border-color:var(--accent)}
+.header-right{font-size:13px; color:var(--muted)}
+.header-right a{color:var(--text); text-decoration:none}
+.header-right a:hover{text-decoration:underline}
 
 .tab{display:none}
 .tab.active{display:block}
@@ -57,19 +44,12 @@ select,input{background:var(--card); border:1px solid var(--border); color:var(-
 .import-label input{display:none}
 
 /* Cards */
-.cards-grid{
-  display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px
-}
+.cards-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px}
 .cards-grid.empty{display:block}
-.empty-state{
-  padding:16px; border:1px dashed var(--border); border-radius:10px; color:var(--muted);
-  background:var(--panel)
-}
+.empty-state{padding:16px; border:1px dashed var(--border); border-radius:10px; color:var(--muted); background:var(--panel)}
 .card{
-  background:linear-gradient(180deg,#171e32,#151b2d);
-  border:1px solid var(--border); border-radius:14px; padding:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.12);
-  transition:transform .15s ease, box-shadow .15s ease;
+  background:linear-gradient(180deg,#171e32,#151b2d); border:1px solid var(--border); border-radius:14px; padding:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.12); transition:transform .15s ease, box-shadow .15s ease;
 }
 .card:hover{transform:translateY(-1px); box-shadow:0 14px 34px rgba(0,0,0,.18)}
 .card .row{display:flex; align-items:center; justify-content:space-between; gap:8px}
@@ -105,7 +85,7 @@ select,input{background:var(--card); border:1px solid var(--border); color:var(-
 .profile-banner{
   height:90px; border:1px solid var(--border); border-radius:14px;
   background:linear-gradient(135deg, rgba(110,168,254,.18), rgba(110,168,254,.05));
-  margin-bottom:-46px; /* banner overlaps avatar row */
+  margin-bottom:-46px;
 }
 .profile-card{
   position:relative; top:-46px;
