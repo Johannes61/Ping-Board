@@ -1,4 +1,4 @@
-// app.js — cleaner UI, verifies target, shows last-checked
+// app.js — cleaner UI, verifies target, shows last-checked, + GitHub profile card
 const state = Storage.load();
 const runtime = {}; // id -> { history: number[], up, total, status, ms, last, targetOrigin }
 
@@ -74,9 +74,13 @@ function init() {
   DragDrop.makeDroppable($('#availableList'), onDropList);
   DragDrop.makeDroppable($('#activeList'), onDropList);
 
+  // Initial UI
   renderLists();
   renderCards();
   restartPinging();
+
+  // Load GitHub profile card for @Johannes61
+  loadGitHubProfile('Johannes61');
 }
 
 function onDropList(id, target) {
@@ -254,6 +258,60 @@ function hardRefresh() {
   }
   renderCards();
   tick();
+}
+
+/* ---------- GitHub profile card ---------- */
+async function loadGitHubProfile(username) {
+  const el = $('#ghCard');
+  try {
+    const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    });
+    if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+    const u = await res.json();
+
+    const name = u.name || u.login;
+    const bio = u.bio || '';
+    const avatar = u.avatar_url;
+    const followers = u.followers ?? 0;
+    const following = u.following ?? 0;
+    const repos = u.public_repos ?? 0;
+    const loc = u.location || '';
+    const blog = u.blog ? (u.blog.startsWith('http') ? u.blog : `https://${u.blog}`) : '';
+
+    el.innerHTML = `
+      <img src="${avatar}" alt="${name} avatar" />
+      <div class="profile-info">
+        <div class="profile-name">${name} <span class="url" style="color:var(--muted)">@${u.login}</span></div>
+        <div class="profile-badges">
+          <span>Repos: <strong>${repos}</strong></span>
+          <span>Followers: <strong>${followers}</strong></span>
+          <span>Following: <strong>${following}</strong></span>
+          ${loc ? `<span>📍 ${loc}</span>` : ''}
+          ${blog ? `<a href="${blog}" target="_blank" rel="noreferrer">🔗 ${new URL(blog).hostname}</a>` : ''}
+        </div>
+        ${bio ? `<div style="color:var(--muted)">${bio}</div>` : ''}
+      </div>
+      <div class="profile-actions">
+        <a href="${u.html_url}" target="_blank" rel="noreferrer">View Profile</a>
+        <a href="${u.html_url}?tab=repositories" target="_blank" rel="noreferrer">Repositories</a>
+      </div>
+    `;
+    // Update H2 link to exact profile
+    const ghLink = $('#ghLink');
+    ghLink.href = u.html_url;
+    ghLink.textContent = `@${u.login}`;
+  } catch (e) {
+    el.innerHTML = `
+      <div class="profile-info">
+        <div class="profile-name">@${username}</div>
+        <div class="profile-badges" style="color:var(--muted)">Could not load GitHub profile (${String(e).replace('Error:','').trim()}).</div>
+      </div>
+      <div class="profile-actions">
+        <a href="https://github.com/${username}" target="_blank" rel="noreferrer">Open on GitHub</a>
+      </div>
+    `;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
