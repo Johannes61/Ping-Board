@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ping Board</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <title>PingBoard</title>
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
   <header class="app-header">
-    <h1>Ping Board</h1>
+    <h1>PingBoard</h1>
     <nav class="tabs">
       <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
       <button class="tab-btn" data-tab="settings">Settings</button>
@@ -30,15 +30,15 @@
         <button id="refreshBtn" class="ghost">Refresh now</button>
         <div class="spacer"></div>
         <button id="exportBtn">Export</button>
-        <label class="import-label">
-          Import <input type="file" id="importFile" accept=".json" />
+        <label class="import-label">Import
+          <input type="file" id="importFile" accept=".json" />
         </label>
         <button id="wipeBtn" class="danger">Wipe</button>
       </div>
 
       <div id="cards" class="cards-grid empty">
         <div class="empty-state">
-          Drag sites into <strong>Active Monitors</strong> in Settings to start pinging.
+          Drag sites into <strong>Active Monitors</strong> in <em>Settings</em> to start pinging.
         </div>
       </div>
     </section>
@@ -48,11 +48,11 @@
       <form id="addSiteForm" class="add-form" autocomplete="off">
         <div>
           <label>Name</label>
-          <input id="siteName" placeholder="e.g., GitHub" required />
+          <input id="siteName" placeholder="e.g., VG" required />
         </div>
         <div>
           <label>URL</label>
-          <input id="siteUrl" placeholder="https://github.com" required />
+          <input id="siteUrl" placeholder="vg.no or https://vg.no" required />
         </div>
         <button type="submit">Add</button>
       </form>
@@ -71,12 +71,13 @@
   </main>
 
   <footer class="app-footer">
-    <span>Frontend only. Pings are HTTP fetch timings (favicon). Page must be open.</span>
+    Frontend-only. Pings are HTTP image requests to each site’s <code>/favicon.ico</code>.
+    The page must stay open to keep pinging.
   </footer>
 
-  <script src="js/storage.js"></script>
-  <script src="js/pinger.js"></script>
-  <script src="js/dragdrop.js"></script>
-  <script src="js/app.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/pinger.js"></script>
+  <script src="./js/dragdrop.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>

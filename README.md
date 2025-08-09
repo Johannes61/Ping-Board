@@ -1,29 +1,24 @@
-# Ping Board
+# PingBoard (Frontend-only)
 
-A lightweight, no‑backend status dashboard that “pings” your sites from the browser by timing a fetch to their `favicon.ico`. Works only while the tab is open.
+A no-backend status dashboard that “pings” your sites from the browser by timing an image request to their `favicon.ico`. Works only while the tab is open.
 
 ## Features
 - Drag & drop between **Available Sites** and **Active Monitors**
-- Clean dark UI with cards, status (UP/DOWN), latency, uptime %, and sparkline
+- Clean dark UI with cards (status, latency, uptime %, last checked)
 - Adjustable global interval (5/10/15/30s)
-- Export/Import configuration (JSON)
+- Export/Import config (JSON)
 - 100% frontend (HTML/CSS/JS) — no servers
 
-## How “ping” works (browser limits)
-Browsers can’t do ICMP. Ping Board measures **HTTP fetch latency**:
-- Requests `https://site.tld/favicon.ico` with `mode: no-cors` and `cache: no-cache`
-- If the fetch resolves → **UP** (even if opaque)
+## How it works
+Browsers can’t do ICMP. PingBoard measures **HTTP reachability**:
+- Requests `https://site.tld/favicon.ico?cb=...` (or adds `https://` if you typed `site.tld`)
+- If the request resolves (even with CORS/404) → **UP** (reachable)
 - Network error/timeout → **DOWN**
 
-> Note: Mixed content rules block `http://` targets on an `https://` page.
+> Note: From an HTTPS origin (e.g., GitHub Pages), mixed content blocks HTTP targets. For HTTP-only devices, test locally or put behind HTTPS.
 
-## Hosting on GitHub Pages
-1. Push this folder to your repo (e.g., `pingboard`).
-2. Enable **Settings → Pages → Deploy from branch** (root).
-3. Open your Pages URL and start adding sites.
-
-## Privacy
-All configuration/state is stored in `localStorage` in your browser.
+## Run locally
+Open `index.html` directly, or serve with any static server.
 
 ## License
 MIT

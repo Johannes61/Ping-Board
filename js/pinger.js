@@ -1,9 +1,9 @@
-// pinger.js — image-based ping with strict absolute target
+// pinger.js — image-based ping with strict absolute targets
 const Pinger = (() => {
   const TIMEOUT_MS = 6000;
 
   function ensureProtocol(url) {
-    // If user typed "example.com", assume https
+    // If user typed "vg.no" -> assume https://vg.no
     if (!/^https?:\/\//i.test(url)) return `https://${url}`;
     return url;
   }
@@ -11,14 +11,14 @@ const Pinger = (() => {
   function targetFrom(url) {
     try {
       const u = new URL(ensureProtocol(url));
-      // We ping the ORIGIN (not your hosting domain) and use favicon for light weight
+      // We ping the ORIGIN (the real site), not your hosting domain
       return `${u.origin}/favicon.ico?cb=${Date.now()}`;
     } catch {
       return null;
     }
   }
 
-  // For UI: show what we’re pinging
+  // For UI: show what we actually ping
   function describeTarget(url) {
     const t = targetFrom(url);
     if (!t) return { origin: '—', url: '—' };
@@ -45,8 +45,9 @@ const Pinger = (() => {
       const timer = setTimeout(() => finish(false), TIMEOUT_MS);
 
       img.onload = () => { clearTimeout(timer); finish(true); };
-      // onerror still means host reached (CORS/404); treat as UP
+      // onerror still means host reached (CORS/404). Treat as UP (reachable).
       img.onerror = () => { clearTimeout(timer); finish(true); };
+
       img.src = t;
     });
   }

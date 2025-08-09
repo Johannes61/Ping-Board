@@ -58,11 +58,11 @@ function init() {
   $('#addSiteForm').addEventListener('submit', (e) => {
     e.preventDefault();
     let name = $('#siteName').value.trim();
-    let url = $('#siteUrl').value.trim();
+    let url  = $('#siteUrl').value.trim();
     if (!name || !url) return;
 
-    // Normalize and store the exact input user meant (not relative)
-    url = Pinger.ensureProtocol(url);
+    url = Pinger.ensureProtocol(url); // normalize to absolute
+
     const id = uid();
     state.sites.push({ id, name, url });
     Storage.save(state);
@@ -145,7 +145,7 @@ function renderCards() {
       </div>
 
       <div class="row meta">
-        <span title="Actual ping target">${origin}</span>
+        <span title="Ping target origin">${origin}</span>
         <a class="tiny" href="${url}" target="_blank" rel="noreferrer">verify target ↗</a>
       </div>
 
@@ -170,8 +170,8 @@ function renderCards() {
     });
     card.querySelector('[data-act="edit"]').addEventListener('click', () => {
       const newName = prompt('Name', site.name); if (newName === null) return;
-      const newUrl = prompt('URL', site.url); if (newUrl === null) return;
-      site.name = newName.trim() || site.name;
+      const newUrl  = prompt('URL', site.url);  if (newUrl === null) return;
+      site.name = (newName.trim() || site.name);
       site.url  = Pinger.ensureProtocol(newUrl.trim() || site.url);
       Storage.save(state);
       renderLists(); renderCards(); restartPinging();
@@ -216,8 +216,7 @@ let timerId = null;
 function restartPinging() {
   if (timerId) clearInterval(timerId);
   if (state.activeIds.length === 0) return;
-  // Tick immediately, then on interval
-  tick();
+  tick(); // immediate
   timerId = setInterval(tick, state.intervalMs);
 }
 
