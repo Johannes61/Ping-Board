@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ping Board</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Ping Board</h1>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="tab active">
+      <div class="toolbar">
+        <label>Interval:
+          <select id="intervalSelect">
+            <option value="5000">5s</option>
+            <option value="10000">10s</option>
+            <option value="15000">15s</option>
+            <option value="30000">30s</option>
+          </select>
+        </label>
+        <button id="refreshBtn" class="ghost">Refresh now</button>
+        <div class="spacer"></div>
+        <button id="exportBtn">Export</button>
+        <label class="import-label">
+          Import <input type="file" id="importFile" accept=".json" />
+        </label>
+        <button id="wipeBtn" class="danger">Wipe</button>
+      </div>
+
+      <div id="cards" class="cards-grid empty">
+        <div class="empty-state">
+          Drag sites into <strong>Active Monitors</strong> in Settings to start pinging.
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="settings" class="tab">
+      <form id="addSiteForm" class="add-form" autocomplete="off">
+        <div>
+          <label>Name</label>
+          <input id="siteName" placeholder="e.g., GitHub" required />
+        </div>
+        <div>
+          <label>URL</label>
+          <input id="siteUrl" placeholder="https://github.com" required />
+        </div>
+        <button type="submit">Add</button>
+      </form>
+
+      <div class="lists">
+        <div class="list-col">
+          <h3>Available Sites</h3>
+          <ul id="availableList" class="site-list" data-list="available"></ul>
+        </div>
+        <div class="list-col">
+          <h3>Active Monitors</h3>
+          <ul id="activeList" class="site-list" data-list="active"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Frontend only. Pings are HTTP fetch timings (favicon). Page must be open.</span>
+  </footer>
+
+  <script src="js/storage.js"></script>
+  <script src="js/pinger.js"></script>
+  <script src="js/dragdrop.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
